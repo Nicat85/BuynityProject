@@ -7,6 +7,7 @@ using OnlineSohppingSystem.Application.Shared.Helpers;
 using OnlineSohppingSystem.Application.Shared.Settings;
 using OnlineShppingSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore; 
 
 public class RedisNotificationService : IRedisNotificationService
 {
@@ -41,20 +42,22 @@ public class RedisNotificationService : IRedisNotificationService
     {
         var key = RedisKeyHelper.GetNotificationKey(userId);
 
-        
         string? senderName = incoming.SenderName;
         string? senderAvatarUrl = incoming.SenderAvatarUrl;
 
         if (incoming.SenderId != Guid.Empty)
         {
-            var sender = await _userManager.FindByIdAsync(incoming.SenderId.ToString());
+           
+            var sender = await _userManager.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == incoming.SenderId, ct);
+
             if (sender != null)
             {
                 senderName = string.IsNullOrWhiteSpace(sender.FullName)
                     ? sender.UserName
                     : sender.FullName;
 
-               
                 senderAvatarUrl = !string.IsNullOrWhiteSpace(sender.ProfilePicture)
                     ? sender.ProfilePicture
                     : "/images/avatars/default.png";

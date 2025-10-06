@@ -51,6 +51,14 @@ public sealed class OrdersController : ControllerBase
         return StatusCode((int)resp.StatusCode, resp);
     }
 
+    [HttpGet("all")]
+    [Authorize(Policy = Permissions.Orders.ViewAll)]
+    public async Task<IActionResult> GetAllAsync(CancellationToken ct)
+    {
+        var resp = await _orders.GetAllOrdersAsync(ct);
+        return StatusCode((int)resp.StatusCode, resp);
+    }
+
     [HttpPost("{orderId:guid}/checkout")]
     [Authorize]
     public async Task<IActionResult> CreateCheckout([FromRoute] Guid orderId, CancellationToken ct = default)

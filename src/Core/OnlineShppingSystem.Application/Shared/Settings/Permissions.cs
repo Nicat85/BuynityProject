@@ -144,8 +144,9 @@ namespace OnlineShppingSystem.Application.Shared.Settings
             public const string Create = "Permissions.Orders.Create";
             public const string ReadMy = "Permissions.Orders.ReadMy";
             public const string ReadById = "Permissions.Orders.ReadById";
+            public const string ViewAll = "Permissions.Orders.ViewAll";
 
-            public static readonly IReadOnlyList<string> All = new[] { Create, ReadMy, ReadById };
+            public static readonly IReadOnlyList<string> All = new[] { Create, ReadMy, ReadById, ViewAll };
         }
 
         public static class SupportChat

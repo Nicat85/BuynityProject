@@ -10,5 +10,6 @@ public interface IOrderService
     Task<BaseResponse<List<OrderResultDto>>> GetMyOrdersAsync(CancellationToken ct = default);
     Task<BaseResponse<bool>> MarkAsPaidAsync(Guid orderId, string providerPaymentId, CancellationToken ct = default);
     Task<BaseResponse<OrderTrackingDto>> GetTrackingAsync(Guid orderId, CancellationToken ct = default);
+    Task<BaseResponse<List<OrderResultDto>>> GetAllOrdersAsync(CancellationToken ct);
 
 }

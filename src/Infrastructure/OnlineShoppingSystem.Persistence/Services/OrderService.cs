@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,7 @@ public sealed class OrderService : IOrderService
     private readonly IUnitOfWork _uow;
     private readonly OnlineShoppingSystemDbContext _ctx;
     private readonly ILogger<OrderService> _log;
+    private readonly IMapper _mapper;
 
     public OrderService(
         UserManager<AppUser> userManager,
@@ -40,7 +42,8 @@ public sealed class OrderService : IOrderService
         IRepository<PaymentEntity> paymentRepo,
         IUnitOfWork uow,
         OnlineShoppingSystemDbContext ctx,
-        ILogger<OrderService> log)
+        ILogger<OrderService> log,
+        IMapper mapper) 
     {
         _userManager = userManager;
         _http = http;
@@ -51,6 +54,7 @@ public sealed class OrderService : IOrderService
         _uow = uow;
         _ctx = ctx;
         _log = log;
+        _mapper = mapper;
     }
 
     public async Task<BaseResponse<OrderResultDto>> CreateOrderAsync(OrderCreateDto request, CancellationToken ct = default)
@@ -331,6 +335,54 @@ public sealed class OrderService : IOrderService
 
         return BaseResponse<OrderTrackingDto>.CreateSuccess(dto);
     }
+
+    public async Task<BaseResponse<List<OrderResultDto>>> GetAllOrdersAsync(CancellationToken ct)
+    {
+        var dto = await _orderRepo
+            .GetAll()
+            .AsNoTracking()
+            .Include(o => o.Buyer)
+            .Include(o => o.OrderItems)
+                .ThenInclude(i => i.Product)
+            .Include(o => o.Payment)
+            .Select(o => new OrderResultDto
+            {
+                OrderId = o.Id,
+                BuyerName = o.Buyer != null ? o.Buyer.UserName : null,
+                BuyerPhone = o.Buyer != null ? o.Buyer.PhoneNumber : null,
+                BuyerAddress = o.Buyer != null ? o.Buyer.Address : null,
+                OrderDate = o.CreatedAt,
+                TotalPrice = o.OrderItems.Sum(i => i.UnitPrice * i.Quantity),
+                Status = o.Status,
+
+                
+                PaymentMethod = o.Payment != null
+                    ? o.Payment.PaymentMethod.ToString()
+                    : "Unknown",
+
+                Items = o.OrderItems.Select(i => new OrderItemResultDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.Product != null ? i.Product.Name : null,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
+            })
+            .ToListAsync(ct);
+
+        return new BaseResponse<List<OrderResultDto>>
+        {
+            Data = dto,
+            Message = "Bütün sifarişlər uğurla gətirildi.",
+            IsSuccess = true,
+            StatusCode = HttpStatusCode.OK
+        };
+    }
+
+
+
+
+
     private Guid ResolveUserId()
     {
         var sid = _http.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
